@@ -36,6 +36,11 @@ class CGVParser:
             LOGGER.warning("HTML parsing produced empty text scope for target: %s", target)
             return BookingState.UNKNOWN
 
+        # 우선순위: 준비중/불가를 먼저 판별해 "예매" 일반 토큰 오탐을 피한다.
+        available_tokens = ["예매하기", "booking", "buy ticket", "book now", "seat"]
+        preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
+        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
+
         available_tokens = ["예매하기", "예매", "booking", "buy ticket", "seat"]
         preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
         unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
@@ -46,6 +51,8 @@ class CGVParser:
             return BookingState.PREPARING
         if self._contains_any(normalized, unavailable_tokens):
             return BookingState.UNAVAILABLE
+        if self._contains_any(normalized, available_tokens):
+            return BookingState.AVAILABLE
 
         LOGGER.warning(
             "Could not confidently map booking state. target=%s snippet=%s",

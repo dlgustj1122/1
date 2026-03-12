@@ -1,4 +1,6 @@
 import importlib
+import os
+import re
 import sys
 import types
 import unittest
@@ -32,6 +34,39 @@ def _import_main_with_fallback_stubs():
         if "bs4" not in sys.modules:
             bs4 = types.ModuleType("bs4")
 
+            class _Parent:
+                def __init__(self, text: str) -> None:
+                    self._text = text
+
+                def get_text(self, _separator: str = " ", strip: bool = False) -> str:
+                    return self._text.strip() if strip else self._text
+
+            class _TextNode(str):
+                def __new__(cls, value: str, parent: _Parent):
+                    obj = str.__new__(cls, value)
+                    obj.parent = parent
+                    return obj
+
+            class BeautifulSoup:  # pragma: no cover - import stub
+                def __init__(self, html: str, *_args, **_kwargs):
+                    self._html = html
+
+                def find_all(self, string: bool = False):
+                    if not string:
+                        return []
+                    chunks = re.findall(r">([^<>]+)<", self._html)
+                    nodes = []
+                    for chunk in chunks:
+                        text = chunk.strip()
+                        if text:
+                            parent = _Parent(text)
+                            nodes.append(_TextNode(text, parent))
+                    return nodes
+
+                def get_text(self, _separator: str = " ", strip: bool = False) -> str:
+                    text = re.sub(r"<[^>]+>", " ", self._html)
+                    text = " ".join(text.split())
+                    return text.strip() if strip else text
             class BeautifulSoup:  # pragma: no cover - import stub
                 def __init__(self, *_args, **_kwargs):
                     pass
@@ -71,6 +106,42 @@ class TestMainLifecycleNotifications(unittest.TestCase):
         notifier.send_message.assert_any_call("종료됐습니다.")
         self.assertEqual(notifier.send_message.call_count, 2)
         scheduler.run_forever.assert_called_once_with(watcher.check_once)
+
+
+class TestEnvLoading(unittest.TestCase):
+    def test_poll_interval_falls_back_to_default_on_invalid_value(self) -> None:
+        self.assertEqual(main._poll_interval_or_default("abc", 60), 60)
+        self.assertEqual(main._poll_interval_or_default("0", 60), 60)
+        self.assertEqual(main._poll_interval_or_default("-5", 60), 60)
+        self.assertEqual(main._poll_interval_or_default("120", 60), 120)
+
+    @patch("main.load_dotenv")
+    def test_load_env_accepts_alias_and_defaults(self, _mock_load_dotenv: Mock) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "영화제목": "프로젝트 헤일메리",
+                "CGV_THEATER_NAME": "용산아이파크몰",
+                "CGV_DATE": "2026-03-29",
+                "BOT_TOKEN": "abc123\\n",
+                "CHAT_ID": "dvd1245",
+            },
+            clear=True,
+        ):
+            env = main.load_env_or_raise()
+
+        self.assertEqual(env["CGV_MOVIE_NAME"], "프로젝트 헤일메리")
+        self.assertEqual(env["CGV_URL"], main.DEFAULT_CGV_URL)
+        self.assertEqual(env["CGV_FORMAT"], "")
+        self.assertEqual(env["TELEGRAM_BOT_TOKEN"], "abc123")
+
+    @patch("main.load_dotenv")
+    def test_load_env_raises_for_missing_required_keys(self, _mock_load_dotenv: Mock) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(ValueError) as context:
+                main.load_env_or_raise()
+
+        self.assertIn("Missing required env vars", str(context.exception))
 
 
 if __name__ == "__main__":
