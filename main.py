@@ -75,6 +75,29 @@ def load_env_or_raise() -> dict[str, str]:
             f"{', '.join(missing)}\n"
             "Please create a .env file from .env.example and fill required values."
         )
+def load_env_or_raise() -> dict[str, str]:
+    load_dotenv()
+    required_keys = [
+        "CGV_URL",
+        "CGV_MOVIE_NAME",
+        "CGV_THEATER_NAME",
+        "CGV_DATE",
+        "CGV_FORMAT",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CHAT_ID",
+    ]
+
+    values: dict[str, str] = {}
+    missing: list[str] = []
+    for key in required_keys:
+        value = os.getenv(key)
+        if value is None or not value.strip():
+            missing.append(key)
+        else:
+            values[key] = value.strip()
+
+    if missing:
+        raise ValueError(f"Missing required env vars: {', '.join(missing)}")
 
     return values
 
@@ -117,6 +140,7 @@ def build_watcher() -> tuple[CGVBookingWatcher, int]:
     )
 
     interval = _poll_interval_or_default(os.getenv("POLL_INTERVAL_SECONDS"), default=60)
+    interval = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))
     return watcher, interval
 
 
@@ -137,6 +161,13 @@ def main() -> None:
         LOGGER.info("Interrupted by user")
     except ValueError as error:
         LOGGER.error("Configuration error: %s", error)
+    watcher, interval = build_watcher()
+    scheduler = PollScheduler(interval_seconds=interval)
+    try:
+        watcher.notifier.send_message("시작됐습니다.")
+        scheduler.run_forever(watcher.check_once)
+    except KeyboardInterrupt:
+        LOGGER.info("Interrupted by user")
     except Exception:  # noqa: BLE001
         LOGGER.exception("Unhandled error while running watcher")
         raise
@@ -146,6 +177,10 @@ def main() -> None:
                 watcher.notifier.send_message("종료됐습니다.")
             except Exception:  # noqa: BLE001
                 LOGGER.exception("Failed to send shutdown notification")
+        try:
+            watcher.notifier.send_message("종료됐습니다.")
+        except Exception:  # noqa: BLE001
+            LOGGER.exception("Failed to send shutdown notification")
 
 
 if __name__ == "__main__":

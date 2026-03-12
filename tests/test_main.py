@@ -67,6 +67,9 @@ def _import_main_with_fallback_stubs():
                     text = re.sub(r"<[^>]+>", " ", self._html)
                     text = " ".join(text.split())
                     return text.strip() if strip else text
+            class BeautifulSoup:  # pragma: no cover - import stub
+                def __init__(self, *_args, **_kwargs):
+                    pass
 
             bs4.BeautifulSoup = BeautifulSoup
             sys.modules["bs4"] = bs4

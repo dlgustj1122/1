@@ -58,6 +58,11 @@ Copy-Item .env.example .env
 - `CGV_MOVIE_NAME`: 영화명
 - `CGV_THEATER_NAME`: 극장명
 - `CGV_DATE`: 날짜 (문자열)
+- `CGV_URL`: 감시할 CGV URL
+- `CGV_MOVIE_NAME`: 영화명
+- `CGV_THEATER_NAME`: 극장명
+- `CGV_DATE`: 날짜 (문자열)
+- `CGV_FORMAT`: 포맷 (예: IMAX, 4DX)
 - `TELEGRAM_BOT_TOKEN`: Telegram Bot Token
 - `TELEGRAM_CHAT_ID`: Telegram Chat ID
 
@@ -71,6 +76,9 @@ Copy-Item .env.example .env
 - `영화제목` → `CGV_MOVIE_NAME`
 - `BOT_TOKEN` → `TELEGRAM_BOT_TOKEN`
 - `CHAT_ID` → `TELEGRAM_CHAT_ID`
+
+- `POLL_INTERVAL_SECONDS` (기본 60)
+- `STATE_FILE` (기본 `watcher_state.json`)
 
 ### 5) 실행
 ```powershell

@@ -41,6 +41,12 @@ class CGVParser:
         preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
         unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
 
+        available_tokens = ["예매하기", "예매", "booking", "buy ticket", "seat"]
+        preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
+        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
+
+        if self._contains_any(normalized, available_tokens):
+            return BookingState.AVAILABLE
         if self._contains_any(normalized, preparing_tokens):
             return BookingState.PREPARING
         if self._contains_any(normalized, unavailable_tokens):
