@@ -106,6 +106,12 @@ class TestMainLifecycleNotifications(unittest.TestCase):
 
 
 class TestEnvLoading(unittest.TestCase):
+    def test_poll_interval_falls_back_to_default_on_invalid_value(self) -> None:
+        self.assertEqual(main._poll_interval_or_default("abc", 60), 60)
+        self.assertEqual(main._poll_interval_or_default("0", 60), 60)
+        self.assertEqual(main._poll_interval_or_default("-5", 60), 60)
+        self.assertEqual(main._poll_interval_or_default("120", 60), 120)
+
     @patch("main.load_dotenv")
     def test_load_env_accepts_alias_and_defaults(self, _mock_load_dotenv: Mock) -> None:
         with patch.dict(

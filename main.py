@@ -79,6 +79,24 @@ def load_env_or_raise() -> dict[str, str]:
     return values
 
 
+
+
+def _poll_interval_or_default(raw_value: str | None, default: int = 60) -> int:
+    if raw_value is None or not raw_value.strip():
+        return default
+
+    try:
+        interval = int(raw_value.strip())
+    except ValueError:
+        LOGGER.warning("Invalid POLL_INTERVAL_SECONDS=%s; using default %s", raw_value, default)
+        return default
+
+    if interval <= 0:
+        LOGGER.warning("POLL_INTERVAL_SECONDS must be positive; using default %s", default)
+        return default
+
+    return interval
+
 def build_watcher() -> tuple[CGVBookingWatcher, int]:
     env = load_env_or_raise()
 
@@ -98,7 +116,7 @@ def build_watcher() -> tuple[CGVBookingWatcher, int]:
         cgv_url=env["CGV_URL"],
     )
 
-    interval = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))
+    interval = _poll_interval_or_default(os.getenv("POLL_INTERVAL_SECONDS"), default=60)
     return watcher, interval
 
 

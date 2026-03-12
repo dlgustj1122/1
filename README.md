@@ -85,3 +85,8 @@ python -m unittest discover -s tests -p "test_*.py"
 ## 구현 참고
 - CGV 페이지 구조가 변경되면 상태 판별 로직이 실패할 수 있습니다.
 - 이 경우 로그(`HTML structure may have changed`)를 확인하고 `parser.py`의 토큰/선택 로직을 조정하세요.
+
+
+### 문제 해결 (Troubleshooting)
+- `Missing required env vars` 오류가 나면 `.env` 파일이 같은 폴더에 있는지 확인하고, 최소 필수 항목(`CGV_MOVIE_NAME`, `CGV_THEATER_NAME`, `CGV_DATE`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`)을 채우세요.
+- `POLL_INTERVAL_SECONDS`가 숫자가 아니거나 0 이하이면 자동으로 기본값 60초를 사용합니다.
