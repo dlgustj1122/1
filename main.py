@@ -12,6 +12,8 @@ from cgv_watcher.scheduler import PollScheduler
 from cgv_watcher.state_store import StateStore
 from cgv_watcher.watcher import CGVBookingWatcher
 
+LOGGER = logging.getLogger(__name__)
+
 
 def setup_logging() -> None:
     logging.basicConfig(
@@ -74,7 +76,19 @@ def main() -> None:
     setup_logging()
     watcher, interval = build_watcher()
     scheduler = PollScheduler(interval_seconds=interval)
-    scheduler.run_forever(watcher.check_once)
+    try:
+        watcher.notifier.send_message("시작됐습니다.")
+        scheduler.run_forever(watcher.check_once)
+    except KeyboardInterrupt:
+        LOGGER.info("Interrupted by user")
+    except Exception:  # noqa: BLE001
+        LOGGER.exception("Unhandled error while running watcher")
+        raise
+    finally:
+        try:
+            watcher.notifier.send_message("종료됐습니다.")
+        except Exception:  # noqa: BLE001
+            LOGGER.exception("Failed to send shutdown notification")
 
 
 if __name__ == "__main__":
