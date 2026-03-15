@@ -129,8 +129,9 @@ def main() -> None:
         watcher, interval = build_watcher()
         scheduler = PollScheduler(interval_seconds=interval)
 
-        watcher.notifier.send_message("시작됐습니다.")
-        start_message_sent = True
+        start_message_sent = watcher.notifier.send_message("시작됐습니다.")
+        if not start_message_sent:
+            LOGGER.warning("Startup Telegram notification failed")
         scheduler.run_forever(watcher.check_once)
     except KeyboardInterrupt:
         LOGGER.info("Interrupted by user")
