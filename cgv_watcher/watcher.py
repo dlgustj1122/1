@@ -24,61 +24,25 @@ class CGVBookingWatcher:
         self.state_store = state_store
         self.target = target
         self.cgv_url = cgv_url
-        self._effective_url = cgv_url
-        self._error_alert_active = False
 
     def check_once(self) -> None:
-        try:
-            html = self.parser.fetch(self.cgv_url)
-            self._effective_url = self.parser.final_url or self.cgv_url
-
-            if not html.strip():
-                self._notify_error_once("오류가 발생했습니다.")
-                LOGGER.warning(
-                    "Skipping check: empty response from CGV. requested=%s final=%s error=%s",
-                    self.cgv_url,
-                    self._effective_url,
-                    self.parser.last_error,
-                )
-                return
-
-            current_state = self.parser.determine_state(html, self.target)
-        except Exception as error:  # noqa: BLE001
-            self._notify_error_once("오류가 발생했습니다.")
-            LOGGER.warning("Watcher check failed while fetching/parsing: %s", error)
-            return
-
-        self._error_alert_active = False
+        html = self.parser.fetch(self.cgv_url)
+        current_state = self.parser.determine_state(html, self.target)
         last_state = self.state_store.load_last_state()
 
         LOGGER.info(
-            "Current state=%s last_state=%s target=%s final_url=%s",
+            "Current state=%s last_state=%s target=%s",
             current_state.value,
             last_state.value if last_state else None,
             self.target.to_dict(),
-            self._effective_url,
         )
 
         if self._should_notify_available(last_state, current_state):
             message = self._build_available_message()
-            sent = self.notifier.send_message(message)
-            if not sent:
-                LOGGER.warning("Availability detected but Telegram notification failed")
+            self.notifier.send_message(message)
 
         if last_state != current_state:
-            try:
-                self.state_store.save_last_state(current_state)
-            except Exception as error:  # noqa: BLE001
-                self._notify_error_once("오류가 발생했습니다.")
-                LOGGER.warning("Failed to persist watcher state: %s", error)
-
-    def _notify_error_once(self, message: str) -> None:
-        if self._error_alert_active:
-            return
-        sent = self.notifier.send_message(message)
-        if not sent:
-            LOGGER.warning("Failed to send error notification")
-        self._error_alert_active = True
+            self.state_store.save_last_state(current_state)
 
     def _should_notify_available(
         self,
@@ -95,5 +59,5 @@ class CGVBookingWatcher:
             f"극장: {self.target.theater_name}\n"
             f"날짜: {self.target.date}\n"
             f"포맷: {format_text}\n"
-            f"URL: {self._effective_url}"
+            f"URL: {self.cgv_url}"
         )

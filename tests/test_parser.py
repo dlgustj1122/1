@@ -35,28 +35,12 @@ class TestCGVParser(unittest.TestCase):
 
     def test_fetch_returns_empty_string_on_network_error(self) -> None:
         session = Mock()
-        session.headers = {}
         session.get.side_effect = requests.RequestException("403")
         parser = CGVParser(session=session)
 
-        result = parser.fetch("https://cgv.co.kr/cnm/movieBook")
+        result = parser.fetch("https://www.cgv.co.kr/ticket/")
 
         self.assertEqual(result, "")
-        self.assertIn("403", parser.last_error)
-
-    def test_fetch_tracks_redirected_final_url(self) -> None:
-        session = Mock()
-        session.headers = {}
-        response = Mock()
-        response.url = "https://cgv.co.kr/cnm/movieBook/detail"
-        response.text = "<html></html>"
-        response.raise_for_status.return_value = None
-        session.get.return_value = response
-
-        parser = CGVParser(session=session)
-        parser.fetch("https://cgv.co.kr/cnm/movieBook")
-
-        self.assertEqual(parser.final_url, "https://cgv.co.kr/cnm/movieBook/detail")
 
 
 if __name__ == "__main__":

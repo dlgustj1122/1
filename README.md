@@ -62,7 +62,7 @@ Copy-Item .env.example .env
 - `TELEGRAM_CHAT_ID=<numeric_chat_id_or_@channel_username>`
 
 선택 값:
-- `CGV_URL` (기본 `https://cgv.co.kr/cnm/movieBook`)
+- `CGV_URL` (기본 `https://www.cgv.co.kr/ticket/`)
 - `POLL_INTERVAL_SECONDS` (기본 60)
 - `STATE_FILE` (기본 `watcher_state.json`)
 
@@ -79,5 +79,3 @@ python -m unittest discover -s tests -p "test_*.py"
 ## 구현 참고
 - CGV 페이지 구조가 변경되면 상태 판별 로직이 실패할 수 있습니다.
 - 이 경우 로그(`HTML structure may have changed`)를 확인하고 `parser.py`의 토큰/선택 로직을 조정하세요.
-
-- 403/차단이 지속될 경우 HTML 크롤링 대신 CGV 공식 앱 알림, 공식 API 제공 여부, 또는 다른 공식 알림 채널을 검토하세요.
