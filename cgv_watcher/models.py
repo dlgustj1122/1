@@ -16,7 +16,7 @@ class WatchTarget:
     movie_name: str
     theater_name: str
     date: str
-    movie_format: str
+    movie_format: str = ""
 
     def to_dict(self) -> dict[str, str]:
         return {
@@ -32,5 +32,5 @@ class WatchTarget:
             movie_name=env["CGV_MOVIE_NAME"],
             theater_name=env["CGV_THEATER_NAME"],
             date=env["CGV_DATE"],
-            movie_format=env["CGV_FORMAT"],
+            movie_format=env.get("CGV_FORMAT", ""),
         )
