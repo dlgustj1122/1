@@ -15,7 +15,10 @@ class PollScheduler:
         LOGGER.info("Starting scheduler: every %s seconds", self.interval_seconds)
         while True:
             started = time.time()
-            job()
+            try:
+                job()
+            except Exception as error:  # noqa: BLE001
+                LOGGER.warning("Scheduler job failed: %s", error)
             elapsed = time.time() - started
             sleep_for = max(self.interval_seconds - elapsed, 0)
             time.sleep(sleep_for)
