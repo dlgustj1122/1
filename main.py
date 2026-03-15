@@ -143,11 +143,9 @@ def main() -> None:
     finally:
         if watcher is not None and start_message_sent:
             try:
-                sent = watcher.notifier.send_message("종료됐습니다.")
-                if not sent:
-                    LOGGER.warning("Shutdown Telegram notification failed")
-            except Exception as error:  # noqa: BLE001
-                LOGGER.warning("Failed to send shutdown notification: %s", error)
+                watcher.notifier.send_message("종료됐습니다.")
+            except Exception:  # noqa: BLE001
+                LOGGER.exception("Failed to send shutdown notification")
 
 
 if __name__ == "__main__":
