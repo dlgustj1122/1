@@ -16,10 +16,7 @@ DEFAULT_HEADERS = {
         "Chrome/124.0.0.0 Safari/537.36"
     ),
     "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Referer": "https://www.cgv.co.kr/",
 }
-
 
 
 @dataclass
@@ -33,15 +30,12 @@ class CGVParser:
     def fetch(self, url: str, timeout: int = 10) -> str:
         assert self.session is not None
         try:
-            response = self.session.get(url, timeout=timeout, headers=DEFAULT_HEADERS)
+            response = self.session.get(url, timeout=timeout)
             response.raise_for_status()
             return response.text
-        except requests.RequestException as error:
-            LOGGER.warning("Network error while fetching CGV page: %s (%s)", url, error)
-            return ""
-        except Exception as error:  # noqa: BLE001
-            LOGGER.warning("Unexpected error while fetching CGV page: %s (%s)", url, error)
-            return ""
+        except requests.RequestException:
+            LOGGER.exception("Network error while fetching CGV page: %s", url)
+            raise
 
     def determine_state(self, html: str, target: WatchTarget) -> BookingState:
         soup = BeautifulSoup(html, "html.parser")

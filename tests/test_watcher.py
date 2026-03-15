@@ -55,27 +55,3 @@ class TestWatcher(unittest.TestCase):
 
         notifier.send_message.assert_not_called()
 
-
-
-    def test_empty_fetch_response_skips_processing(self) -> None:
-        parser = Mock()
-        parser.fetch.return_value = ""
-
-        notifier = Mock()
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            state_path = Path(tmpdir) / "state.json"
-            store = StateStore(str(state_path))
-            watcher = CGVBookingWatcher(
-                parser=parser,
-                notifier=notifier,
-                state_store=store,
-                target=self.target,
-                cgv_url="https://example.com",
-            )
-
-            watcher.check_once()
-
-            self.assertIsNone(store.load_last_state())
-        parser.determine_state.assert_not_called()
-        notifier.send_message.assert_not_called()
