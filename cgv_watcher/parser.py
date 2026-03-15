@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import requests
 from bs4 import BeautifulSoup
@@ -22,10 +22,14 @@ DEFAULT_HEADERS = {
 @dataclass
 class CGVParser:
     session: requests.Session | None = None
+    final_url: str = ""
+    last_error: str = ""
+    _default_headers: dict[str, str] = field(default_factory=lambda: DEFAULT_HEADERS.copy())
 
     def __post_init__(self) -> None:
         if self.session is None:
             self.session = requests.Session()
+        self.session.headers.update(self._default_headers)
 
     def fetch(self, url: str, timeout: int = 10) -> str:
         assert self.session is not None

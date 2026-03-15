@@ -13,7 +13,7 @@ from cgv_watcher.state_store import StateStore
 from cgv_watcher.watcher import CGVBookingWatcher
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_CGV_URL = "https://www.cgv.co.kr/ticket/"
+DEFAULT_CGV_URL = "https://cgv.co.kr/cnm/movieBook"
 
 
 def setup_logging() -> None:

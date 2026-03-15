@@ -15,9 +15,12 @@ class TestWatcher(unittest.TestCase):
     def test_notify_only_on_first_available(self) -> None:
         parser = Mock()
         parser.fetch.return_value = "<html></html>"
+        parser.final_url = "https://redirected.example.com/show"
+        parser.last_error = ""
         parser.determine_state.return_value = BookingState.AVAILABLE
 
         notifier = Mock()
+        notifier.send_message.return_value = True
 
         with tempfile.TemporaryDirectory() as tmpdir:
             state_path = Path(tmpdir) / "state.json"
