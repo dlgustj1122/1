@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 
 import requests
@@ -17,7 +18,7 @@ class TelegramNotifier:
     def endpoint(self) -> str:
         return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
 
-    def send_message(self, message: str) -> None:
+    def send_message(self, message: str) -> bool:
         payload = {
             "chat_id": self.chat_id,
             "text": message,
