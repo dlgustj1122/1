@@ -9,6 +9,14 @@ from bs4 import BeautifulSoup
 from .models import BookingState, WatchTarget
 
 LOGGER = logging.getLogger(__name__)
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+}
 
 
 @dataclass

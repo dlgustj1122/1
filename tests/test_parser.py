@@ -1,4 +1,7 @@
 import unittest
+from unittest.mock import Mock
+
+import requests
 
 from cgv_watcher.models import BookingState, WatchTarget
 from cgv_watcher.parser import CGVParser
@@ -29,3 +32,16 @@ class TestCGVParser(unittest.TestCase):
         </body></html>
         """
         self.assertEqual(self.parser.determine_state(html, self.target), BookingState.PREPARING)
+
+    def test_fetch_returns_empty_string_on_network_error(self) -> None:
+        session = Mock()
+        session.get.side_effect = requests.RequestException("403")
+        parser = CGVParser(session=session)
+
+        result = parser.fetch("https://www.cgv.co.kr/ticket/")
+
+        self.assertEqual(result, "")
+
+
+if __name__ == "__main__":
+    unittest.main()
