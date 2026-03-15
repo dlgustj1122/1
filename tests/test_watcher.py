@@ -10,7 +10,7 @@ from cgv_watcher.watcher import CGVBookingWatcher
 
 class TestWatcher(unittest.TestCase):
     def setUp(self) -> None:
-        self.target = WatchTarget("영화", "강남", "2026-03-20", "IMAX")
+        self.target = WatchTarget("프로젝트 헤일메리", "용산아이파크몰", "2026-03-29", "IMAX")
 
     def test_notify_only_on_first_available(self) -> None:
         parser = Mock()

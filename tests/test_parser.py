@@ -8,16 +8,16 @@ class TestCGVParser(unittest.TestCase):
     def setUp(self) -> None:
         self.parser = CGVParser()
         self.target = WatchTarget(
-            movie_name="테스트 영화",
-            theater_name="강남",
-            date="2026-03-20",
+            movie_name="프로젝트 헤일메리",
+            theater_name="용산아이파크몰",
+            date="2026-03-29",
             movie_format="IMAX",
         )
 
     def test_determine_state_available(self) -> None:
         html = """
         <html><body>
-            <div>테스트 영화 강남 2026-03-20 IMAX 예매하기</div>
+            <div>프로젝트 헤일메리 용산아이파크몰 2026-03-29 IMAX 예매하기</div>
         </body></html>
         """
         self.assertEqual(self.parser.determine_state(html, self.target), BookingState.AVAILABLE)
@@ -25,7 +25,7 @@ class TestCGVParser(unittest.TestCase):
     def test_determine_state_preparing(self) -> None:
         html = """
         <html><body>
-            <div>테스트 영화 강남 2026-03-20 IMAX 예매준비중</div>
+            <div>프로젝트 헤일메리 용산아이파크몰 2026-03-29 IMAX 예매준비중</div>
         </body></html>
         """
         self.assertEqual(self.parser.determine_state(html, self.target), BookingState.PREPARING)
