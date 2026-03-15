@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 
 import requests
@@ -17,15 +18,33 @@ class TelegramNotifier:
     def endpoint(self) -> str:
         return f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
 
-    def send_message(self, message: str) -> None:
+    def send_message(self, message: str) -> bool:
         payload = {
             "chat_id": self.chat_id,
             "text": message,
         }
 
-        response = requests.post(self.endpoint, data=payload, timeout=self.timeout)
         try:
-            response.raise_for_status()
+            response = requests.post(self.endpoint, data=payload, timeout=self.timeout)
         except requests.RequestException:
-            LOGGER.exception("Telegram sendMessage failed. status=%s body=%s", response.status_code, response.text)
-            raise
+            LOGGER.exception("Telegram sendMessage network failure")
+            return False
+
+        if not response.ok:
+            LOGGER.error(
+                "Telegram sendMessage failed. status=%s body=%s",
+                response.status_code,
+                response.text,
+            )
+            return False
+
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            return True
+
+        if isinstance(data, dict) and not data.get("ok", True):
+            LOGGER.error("Telegram sendMessage rejected: %s", data)
+            return False
+
+        return True

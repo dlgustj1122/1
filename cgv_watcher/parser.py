@@ -21,32 +21,27 @@ class CGVParser:
 
     def fetch(self, url: str, timeout: int = 10) -> str:
         assert self.session is not None
-        response = self.session.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response.text
+        try:
+            response = self.session.get(url, timeout=timeout)
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException:
+            LOGGER.exception("Network error while fetching CGV page: %s", url)
+            raise
 
     def determine_state(self, html: str, target: WatchTarget) -> BookingState:
-        """Infer booking state from CGV page html using keyword heuristics."""
         soup = BeautifulSoup(html, "html.parser")
-
         scope_text = self._extract_scope_text(soup, target)
         normalized = " ".join(scope_text.split()).lower()
 
         if not normalized:
-            LOGGER.warning("HTML parsing produced empty text scope for target: %s", target)
+            LOGGER.warning("HTML structure may have changed: extracted text is empty")
             return BookingState.UNKNOWN
 
-        # 우선순위: 준비중/불가를 먼저 판별해 "예매" 일반 토큰 오탐을 피한다.
+        preparing_tokens = ["예매준비중", "coming soon", "준비중", "오픈예정"]
+        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
         available_tokens = ["예매하기", "booking", "buy ticket", "book now", "seat"]
-        preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
-        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
 
-        available_tokens = ["예매하기", "예매", "booking", "buy ticket", "seat"]
-        preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
-        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
-
-        if self._contains_any(normalized, available_tokens):
-            return BookingState.AVAILABLE
         if self._contains_any(normalized, preparing_tokens):
             return BookingState.PREPARING
         if self._contains_any(normalized, unavailable_tokens):
@@ -55,9 +50,7 @@ class CGVParser:
             return BookingState.AVAILABLE
 
         LOGGER.warning(
-            "Could not confidently map booking state. target=%s snippet=%s",
-            target,
-            normalized[:300],
+            "HTML structure may have changed: state not inferred. snippet=%s", normalized[:300]
         )
         return BookingState.UNKNOWN
 
