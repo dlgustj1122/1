@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import requests
 from bs4 import BeautifulSoup
@@ -9,44 +9,62 @@ from bs4 import BeautifulSoup
 from .models import BookingState, WatchTarget
 
 LOGGER = logging.getLogger(__name__)
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Referer": "https://www.cgv.co.kr/",
+}
 
 
 @dataclass
 class CGVParser:
     session: requests.Session | None = None
+    final_url: str = ""
+    last_error: str = ""
+    _default_headers: dict[str, str] = field(default_factory=lambda: DEFAULT_HEADERS.copy())
 
     def __post_init__(self) -> None:
         if self.session is None:
             self.session = requests.Session()
+        self.session.headers.update(self._default_headers)
 
     def fetch(self, url: str, timeout: int = 10) -> str:
         assert self.session is not None
-        response = self.session.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response.text
+        self.final_url = url
+        self.last_error = ""
+
+        try:
+            response = self.session.get(url, timeout=timeout, allow_redirects=True)
+            self.final_url = response.url or url
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException as error:
+            self.last_error = str(error)
+            LOGGER.warning("Network error while fetching CGV page: %s (%s)", url, error)
+            return ""
+        except Exception as error:  # noqa: BLE001
+            self.last_error = str(error)
+            LOGGER.warning("Unexpected error while fetching CGV page: %s (%s)", url, error)
+            return ""
 
     def determine_state(self, html: str, target: WatchTarget) -> BookingState:
-        """Infer booking state from CGV page html using keyword heuristics."""
         soup = BeautifulSoup(html, "html.parser")
-
         scope_text = self._extract_scope_text(soup, target)
         normalized = " ".join(scope_text.split()).lower()
 
         if not normalized:
-            LOGGER.warning("HTML parsing produced empty text scope for target: %s", target)
+            LOGGER.warning("HTML structure may have changed: extracted text is empty")
             return BookingState.UNKNOWN
 
-        # 우선순위: 준비중/불가를 먼저 판별해 "예매" 일반 토큰 오탐을 피한다.
+        preparing_tokens = ["예매준비중", "coming soon", "준비중", "오픈예정"]
+        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
         available_tokens = ["예매하기", "booking", "buy ticket", "book now", "seat"]
-        preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
-        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
 
-        available_tokens = ["예매하기", "예매", "booking", "buy ticket", "seat"]
-        preparing_tokens = ["예매준비중", "coming soon", "준비중", "open 예정"]
-        unavailable_tokens = ["예매불가", "매진", "종영", "unavailable", "sold out"]
-
-        if self._contains_any(normalized, available_tokens):
-            return BookingState.AVAILABLE
         if self._contains_any(normalized, preparing_tokens):
             return BookingState.PREPARING
         if self._contains_any(normalized, unavailable_tokens):
@@ -55,9 +73,7 @@ class CGVParser:
             return BookingState.AVAILABLE
 
         LOGGER.warning(
-            "Could not confidently map booking state. target=%s snippet=%s",
-            target,
-            normalized[:300],
+            "HTML structure may have changed: state not inferred. snippet=%s", normalized[:300]
         )
         return BookingState.UNKNOWN
 
