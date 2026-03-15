@@ -30,12 +30,12 @@ class CGVParser:
     def fetch(self, url: str, timeout: int = 10) -> str:
         assert self.session is not None
         try:
-            response = self.session.get(url, timeout=timeout, headers=DEFAULT_HEADERS)
+            response = self.session.get(url, timeout=timeout)
             response.raise_for_status()
             return response.text
-        except requests.RequestException as error:
-            LOGGER.warning("Network error while fetching CGV page: %s (%s)", url, error)
-            return ""
+        except requests.RequestException:
+            LOGGER.exception("Network error while fetching CGV page: %s", url)
+            raise
 
     def determine_state(self, html: str, target: WatchTarget) -> BookingState:
         soup = BeautifulSoup(html, "html.parser")
