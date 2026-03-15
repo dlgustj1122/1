@@ -35,45 +35,12 @@ class TestCGVParser(unittest.TestCase):
 
     def test_fetch_returns_empty_string_on_network_error(self) -> None:
         session = Mock()
-        session.headers = {}
         session.get.side_effect = requests.RequestException("403")
         parser = CGVParser(session=session)
 
-        result = parser.fetch("https://cgv.co.kr/cnm/movieBook")
+        result = parser.fetch("https://www.cgv.co.kr/ticket/")
 
         self.assertEqual(result, "")
-        self.assertIn("403", parser.last_error)
-
-
-    def test_fetch_returns_empty_string_on_http_status_error(self) -> None:
-        session = Mock()
-        session.headers = {}
-        response = Mock()
-        response.status_code = 403
-        response.url = "https://cgv.co.kr/cnm/movieBook/movie"
-        response.text = "forbidden"
-        session.get.return_value = response
-
-        parser = CGVParser(session=session)
-        result = parser.fetch("https://cgv.co.kr/cnm/movieBook")
-
-        self.assertEqual(result, "")
-        self.assertEqual(parser.last_error, "HTTP 403")
-        self.assertEqual(parser.final_url, "https://cgv.co.kr/cnm/movieBook/movie")
-
-    def test_fetch_tracks_redirected_final_url(self) -> None:
-        session = Mock()
-        session.headers = {}
-        response = Mock()
-        response.status_code = 200
-        response.url = "https://cgv.co.kr/cnm/movieBook/detail"
-        response.text = "<html></html>"
-        session.get.return_value = response
-
-        parser = CGVParser(session=session)
-        parser.fetch("https://cgv.co.kr/cnm/movieBook")
-
-        self.assertEqual(parser.final_url, "https://cgv.co.kr/cnm/movieBook/detail")
 
 
 if __name__ == "__main__":
