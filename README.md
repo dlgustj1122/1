@@ -59,7 +59,7 @@ Copy-Item .env.example .env
 - `CGV_DATE=2026-03-29`
 - `CGV_FORMAT=IMAX` (원하면 공백 가능)
 - `TELEGRAM_BOT_TOKEN=<your_bot_token>`
-- `TELEGRAM_CHAT_ID=<numeric_chat_id_or_@channel_username>`
+- `TELEGRAM_CHAT_ID=dvd1245`
 
 선택 값:
 - `CGV_URL` (기본 `https://www.cgv.co.kr/ticket/`)

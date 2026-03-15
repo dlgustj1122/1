@@ -26,13 +26,8 @@ class CGVBookingWatcher:
         self.cgv_url = cgv_url
 
     def check_once(self) -> None:
-        try:
-            html = self.parser.fetch(self.cgv_url)
-            current_state = self.parser.determine_state(html, self.target)
-        except Exception:  # noqa: BLE001
-            LOGGER.exception("Watcher check failed while fetching/parsing")
-            return
-
+        html = self.parser.fetch(self.cgv_url)
+        current_state = self.parser.determine_state(html, self.target)
         last_state = self.state_store.load_last_state()
 
         LOGGER.info(
@@ -44,15 +39,10 @@ class CGVBookingWatcher:
 
         if self._should_notify_available(last_state, current_state):
             message = self._build_available_message()
-            sent = self.notifier.send_message(message)
-            if not sent:
-                LOGGER.warning("Availability detected but Telegram notification failed")
+            self.notifier.send_message(message)
 
         if last_state != current_state:
-            try:
-                self.state_store.save_last_state(current_state)
-            except Exception:  # noqa: BLE001
-                LOGGER.exception("Failed to persist watcher state")
+            self.state_store.save_last_state(current_state)
 
     def _should_notify_available(
         self,

@@ -26,25 +26,7 @@ class TelegramNotifier:
 
         try:
             response = requests.post(self.endpoint, data=payload, timeout=self.timeout)
+            response.raise_for_status()
         except requests.RequestException:
-            LOGGER.exception("Telegram sendMessage network failure")
-            return False
-
-        if not response.ok:
-            LOGGER.error(
-                "Telegram sendMessage failed. status=%s body=%s",
-                response.status_code,
-                response.text,
-            )
-            return False
-
-        try:
-            data = response.json()
-        except json.JSONDecodeError:
-            return True
-
-        if isinstance(data, dict) and not data.get("ok", True):
-            LOGGER.error("Telegram sendMessage rejected: %s", data)
-            return False
-
-        return True
+            LOGGER.exception("Telegram sendMessage failed")
+            raise
